@@ -44,7 +44,7 @@ python train.py cfg/person.data cfg/yolo_person.cfg backup/yolo_person.weights
 ```
 ##### Evaluate The Model
 ```
-python valid.py cfg/voc.data cfg/yolo-voc.cfg yolo-voc.weights
+python valid.py cfg/voc.data cfg/yolo_person.cfg backup/yolo_person.weights
 python scripts/voc_eval.py results/comp4_det_test_
 ```
 
