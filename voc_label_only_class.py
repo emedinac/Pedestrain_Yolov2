@@ -22,8 +22,7 @@ def convert(size, box):
     y = y*dh
     h = h*dh
     return (x,y,w,h)
-
-def convert_annotation(year, image_id):
+def convert_annotation(path_img, year, image_id):
     in_file = open('VOCdevkit/VOC%s/Annotations/%s.xml'%(year, image_id))
     out_file = open('VOCdevkit/VOC%s/labels/%s.txt'%(year, image_id), 'w')
     tree=ET.parse(in_file)
@@ -44,6 +43,8 @@ def convert_annotation(year, image_id):
         b = (float(xmlbox.find('xmin').text), float(xmlbox.find('xmax').text), float(xmlbox.find('ymin').text), float(xmlbox.find('ymax').text))
         bb = convert((w,h), b)
         out_file.write(str(cls_id) + " " + " ".join([str(a) for a in bb]) + '\n')
+    if cls in classes:
+			  list_file.write(path_img)
 
 wd = getcwd()
 
@@ -53,6 +54,6 @@ for year, image_set in sets:
     image_ids = open('VOCdevkit/VOC%s/ImageSets/Main/%s.txt'%(year, image_set)).read().strip().split()
     list_file = open('%s_%s.txt'%(year, image_set), 'w')
     for image_id in image_ids:
-        list_file.write('%s/VOCdevkit/VOC%s/JPEGImages/%s.jpg\n'%(wd, year, image_id))
-        convert_annotation(year, image_id)
+        path_img = '%s/VOCdevkit/VOC%s/JPEGImages/%s.jpg\n'%(wd, year, image_id)
+        convert_annotation(path_img, year, image_id)
     list_file.close()
