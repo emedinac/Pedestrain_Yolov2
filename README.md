@@ -54,11 +54,11 @@ python valid.py cfg/voc.data cfg/yolo_person.cfg backup/yolo_person.weights
 python scripts/voc_eval.py results/comp4_det_test_
 ```
 
-Precision (or mAP using the not official code) test on this release model is 76.5% for person class.
+Precision (or mAP using the non official code) test on this release model is 76.5% for person class on the complete dataset.
 
 
 ##### To DO
-- [ ] Use the Non-Maximum Supression (nms) implemented in GPU instead of common CPU mode to speed up the training phase.
+- [ ] Use the Non-Maximum Supression (nms) implemented in GPU instead of common CPU mode to speed up the training phase when training from scratch.
 
 
 ---
