@@ -29,8 +29,14 @@ tar xf VOCtrainval_06-Nov-2007.tar
 tar xf VOCtest_06-Nov-2007.tar
 ```
 ##### Generate Labels for VOC
+run the following command to have the complete test set but only using person detections
 ```
 python voc_label.py
+cat 2007_train.txt 2007_val.txt 2012_*.txt > voc_train.txt
+```
+run the following command to have a test set of person class only.
+```
+python voc_label_only_class.py
 cat 2007_train.txt 2007_val.txt 2012_*.txt > voc_train.txt
 ```
 ##### Extract Pretrained Convolutional Weights
