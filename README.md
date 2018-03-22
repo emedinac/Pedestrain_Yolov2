@@ -48,6 +48,14 @@ python partial.py cfg/yolo_person.cfg yolo_person.weights new_weights.conv.32 32
 ```
 python train.py cfg/person.data cfg/yolo_person.cfg backup/yolo_person.weights
 ```
+or
+```
+python train.py cfg/person.data cfg/yolo_person.cfg new_weights.conv.32
+```
+To freeze some layers the freeze parameter can be employed, just run the following command in train.py:
+```
+Darknet(cfgfile,FREEZE=n_layer=2) # n_layer=2, 6, 10, ...
+```
 ##### Evaluate The Model
 ```
 python valid.py cfg/voc.data cfg/yolo_person.cfg backup/yolo_person.weights
