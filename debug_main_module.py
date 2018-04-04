@@ -33,7 +33,7 @@ class DetectionTests(unittest.TestCase):
         self.assertTrue(detections[1]>=  3  ) # Good Acurracy from 3 to 8, CHANGE THIS TO AVOID ERRORS
         self.assertEqual(detections[0],self.batch_size)
         self.assertEqual(detections[2],7)
-        print("   --   Accuracy test: {}/8 Detections".format(detections[1]), end='   ')
+        print("   --   Accuracy test: {}/8 Detections and batch size: {}".format(detections[1],detections), end='   ')
     def test_net(self):
         detections = net.return_predict(img)
         self.assertEqual(len(detections),self.batch_size)
@@ -46,10 +46,6 @@ class DetectionTests(unittest.TestCase):
             meant += time.time()-t1
         meant /= times
         print("{:.4f} fps  -- ".format(1/meant), end='   ')    
-
-
-
-
 
 if __name__ == '__main__':
     cfgfile = sys.argv[1] # config file
