@@ -55,7 +55,7 @@ if __name__ == '__main__':
     img = cv2.imread('./VOCdevkit/VOC2007/JPEGImages/000377.jpg') # input: stacked camera images with size of 512x512x3 and type is np.uint8
     if batch_size>1: img = np.repeat(img[None,:],batch_size,axis=0)
     times = int(float(sys.argv[5]))
-    net = Network(cfgfile, weightfile, conf_thresh=0.5, nms_thresh=0.4, batch_size=batch_size, gpus=gpus)
+    net = Network(cfgfile, weightfile, img_shape=img, conf_thresh=0.5, nms_thresh=0.4, batch_size=batch_size, gpus=gpus)
 
     print('Initializing tests')
     if len(sys.argv) == 6:
@@ -67,11 +67,20 @@ if __name__ == '__main__':
         suite.addTest(DetectionTests('test_time_processing_N_iterations', net, img, cfgfile, weightfile, gpus, batch_size, times))
         unittest.TextTestRunner(verbosity=2).run(suite)
     else:
+        print('')
         print('Usage:')
         print('    run main_module.py cfgfile weightfile GPUs BatchSize IterationTimes')
+        print('')
+        print('')
+        print('cfgfile:\tYolo configuration file')
+        print('weightfile:\tYolo weights file')
+        print('GPUs:\t\tnumber of GPUs employed to run Yolo')
+        print('BatchSize:\tNumber of camera images stacked in one batch')
+        print('IterationTimes:\tK Iterations for time processing testing (optional)')
+        print('')
         print('Exmaple:')
         print('    run main_module.py cfg/yolo_person.cfg backup/yolo_person.weights 2 128 10')
         print('    perform detection on multiple cameras using pipeline workflow')
         print('or')
-        print('    run main_module.py cfg/yolo_person.cfg backup/yolo_person.weights 2 128 1  ')
+        print('    run main_module.py cfg/yolo_person.cfg backup/yolo_person.weights 2 128 1 ')
         print('    perform detection on one camera using pipeline workflow')

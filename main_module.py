@@ -5,13 +5,18 @@ import cv2
 import torch
 
 class Network():
-    def __init__(self, cfgfile, weightfile, conf_thresh=0.5, nms_thresh=0.4, batch_size=1,gpus=1):
+    def __init__(self, cfgfile, weightfile, img_shape, conf_thresh=0.5, nms_thresh=0.4, batch_size=1, gpus=1):
         self.m = Darknet(cfgfile) # model <=> m
         self.m.print_network()
         self.m.load_weights(weightfile)
         self.batch = batch_size
         self.conf_thresh = conf_thresh
         self.nms_thresh = nms_thresh
+        image_size = img_shape.shape
+        if len(image_size)==4:
+            _, self.w, self.h, _ = image_size
+        else:
+            self.w, self.h, _ = image_size
         print('Loading weights from %s... Done!' % (weightfile))
 
         if self.m.num_classes == 20:
@@ -83,8 +88,7 @@ class Network():
                             bh = hs[ind]
                             cls_max_conf = cls_max_confs[ind]
                             cls_max_id = cls_max_ids[ind]
-                            box = [bcx/w, bcy/h, bw/w, bh/h, det_conf, cls_max_conf, cls_max_id]
-
+                            box = [bcx/w*self.w, bcy/h*self.h, bw/w*self.w, bh/h*self.h, det_conf, cls_max_conf, cls_max_id]
                             boxes.append(box)
             all_boxes.append(boxes)
         return all_boxes
@@ -104,7 +108,6 @@ class Network():
             boxes = all_boxes[i]
             final_boxes.append(nms(boxes, self.nms_thresh))
         return final_boxes
-
     def return_predict(self,img):
         if self.batch>1:
             img_vector = []
@@ -118,36 +121,49 @@ class Network():
         return bboxes
 
 
-############################################
-################### Test ###################
-############################################
-# if __name__ == '__main__':
-#     # import torch
-#     cfgfile = sys.argv[1] # config file
-#     weightfile = sys.argv[2] # weights file
-#     gpus = float(sys.argv[3]) # possible options: 1, other number to take all gpus
-#     batch_size = int(float(sys.argv[4])) # batch size
-#     if len(sys.argv) == 5:
-#         net = Network(cfgfile, weightfile, conf_thresh=0.5, nms_thresh=0.4, batch_size=batch_size, gpus=gpus)
-#         img = np.uint8(np.random.randn(batch_size,512,512,3)) # input: stacked camera images with size of 512x512x3 and type is np.uint8
-#         bboxes = net.return_predict(img)
-#     elif len(sys.argv) == 6:
-#         net = Network(cfgfile, weightfile, conf_thresh=0.5, nms_thresh=0.4, batch_size=batch_size, gpus=gpus)
-#         img = cv2.imread('./VOCdevkit/VOC2007/JPEGImages/000001.jpg')
-#         if batch_size>1: img = np.repeat(img[None,:],batch_size,axis=0)
-#         meant=0
-#         bboxes = net.return_predict(img)
-#         times = int(float(sys.argv[5]))
-#         for i in range(times):
-#             print(i)
-#             t1=time.time()
-#             bboxes = net.return_predict(img)
-#             meant += time.time()-t1
-#         meant /= times
-#         print("{:.4f} fps".format(1/meant))
-#     else:
-#         print('Usage:')
-#         print('    run main_module.py cfgfile weightfile GPUs BatchSize IterationTimes')
-#         print('Exmaple:')
-#         print('    run main_module.py cfg/yolo_person.cfg backup/yolo_person.weights 2 128 100')
-#         print('    perform detection on multiple cameras using pipeline workflow')
+###########################################
+################## Test ###################
+###########################################
+if __name__ == '__main__':
+    cfgfile = sys.argv[1] # config file
+    weightfile = sys.argv[2] # weights file
+    gpus = float(sys.argv[3]) # possible options: 1, other number to take all gpus
+    batch_size = int(float(sys.argv[4])) # batch size
+
+    img = cv2.imread('./data/person_1.jpg')
+    # img = np.uint8(np.random.rand(512,512,3)*255) # input: stacked camera images with size of 512x512x3 and type is np.uint8
+    if batch_size>1: img = np.repeat(img[None,:],batch_size,axis=0)
+
+    net = Network(cfgfile, weightfile, img_shape=img, conf_thresh=0.5, nms_thresh=0.4, batch_size=batch_size, gpus=gpus)
+
+    if len(sys.argv) == 5:
+        bboxes = net.return_predict(img)
+    elif len(sys.argv) == 6:
+        meant=0
+        bboxes = net.return_predict(img)
+        times = int(float(sys.argv[5]))
+        for i in range(times):
+            print(i)
+            t1=time.time()
+            bboxes = net.return_predict(img)
+            meant += time.time()-t1
+        meant /= times
+        print("{:.4f} fps".format(1/meant))
+    else:
+        print('To test the variable -img- can be used over a real input image or a random noise')
+        print('Usage:')
+        print('    run main_module.py cfgfile weightfile GPUs BatchSize IterationTimes')
+        print('')
+        print('')
+        print('cfgfile:\tYolo configuration file')
+        print('weightfile:\tYolo weights file')
+        print('GPUs:\t\tnumber of GPUs employed to run Yolo')
+        print('BatchSize:\tNumber of camera images stacked in one batch')
+        print('IterationTimes:\tK Iterations for time processing testing (optional)')
+        print('')
+        print('Exmaple:')
+        print('    run main_module.py cfg/yolo_person.cfg backup/yolo_person.weights 2 128 10')
+        print('    perform detection on multiple cameras using pipeline workflow')
+        print('or')
+        print('    run main_module.py cfg/yolo_person.cfg backup/yolo_person.weights 2 128 ')
+        print('    perform detection on one camera using pipeline workflow')
