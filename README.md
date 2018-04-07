@@ -1,5 +1,5 @@
 ### Experimenting with Yolov2 in pytorch
-This experiment was performed based on (almost totally) the code available in this link https://github.com/marvis/pytorch-yolo2 .
+This experiment was performed based on (almost totally) the code available in this link https://github.com/marvis/pytorch-yolo2 . My contributions are main_module and debug_main_module for a pipeline development.
 
 ##### Download Weights for pedestrian detection into backup folder
 ```
@@ -66,6 +66,7 @@ Precision (or mAP using the non official code) test on this release model is 76.
 
 
 ##### To DO
+- [X] Yolo Module codes to join the detector to tracking algorithm stages.
 - [ ] Use the Non-Maximum Supression (nms) implemented in GPU instead of common CPU mode to speed up the training phase when training from scratch.
 
 
