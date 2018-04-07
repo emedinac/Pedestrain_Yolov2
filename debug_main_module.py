@@ -17,17 +17,24 @@ class DetectionTests(unittest.TestCase):
         self.times = times
         self.net = net
     def test_image_batch_size(self):
-        self.assertEqual(self.img.shape[1:], (375, 500, 3))
-        self.assertEqual(self.img.shape[0], self.batch_size)
+        if self.batch_size>1: 
+            self.assertEqual(self.img.shape[1:], (375, 500, 3))
+            self.assertEqual(self.img.shape[0], self.batch_size)
+        else:
+            self.assertEqual(self.img.shape, (375, 500, 3))
     def test_do_detection_random_noise(self):
         TorchBatch = torch.FloatTensor(self.batch_size, 3, self.net.m.width, self.net.m.height)
         detections = net.do_detect(TorchBatch)
         self.assertEqual(detections, [[]]*len(detections))
     def test_do_detection_real_image(self):
-        sized = []
-        for i in range(len(img)):
-            sized.append(cv2.resize(self.img[i], (self.net.m.width, self.net.m.height)) )
-        sized = np.array(sized)
+        if self.batch_size>1:
+            img_vector = []
+            for i in range(self.batch_size):
+                img_vector.append( cv2.resize(self.img[i], (self.net.m.width, self.net.m.height)) )
+            sized = np.array(img_vector)
+        else:
+            sized = cv2.resize(self.img, (self.net.m.width, self.net.m.height))
+            sized = sized[None,:]
         detections = net.do_detect(sized)
         detections = np.array(detections).shape
         self.assertTrue(detections[1]>=  3  ) # Good Acurracy from 3 to 8, CHANGE THIS TO AVOID ERRORS
@@ -52,10 +59,11 @@ if __name__ == '__main__':
     weightfile = sys.argv[2] # weights file
     gpus = float(sys.argv[3]) # possible options: 1, other number to take all gpus
     batch_size = int(float(sys.argv[4])) # batch size
-    img = cv2.imread('./VOCdevkit/VOC2007/JPEGImages/000377.jpg') # input: stacked camera images with size of 512x512x3 and type is np.uint8
+    img = cv2.imread('./data/person_1.jpg')
+    # img = np.uint8(np.random.rand(512,512,3)*255) # input: stacked camera images with size of 512x512x3 and type is np.uint8
     if batch_size>1: img = np.repeat(img[None,:],batch_size,axis=0)
     times = int(float(sys.argv[5]))
-    net = Network(cfgfile, weightfile, img_shape=img, conf_thresh=0.5, nms_thresh=0.4, batch_size=batch_size, gpus=gpus)
+    net = Network(cfgfile, weightfile, img_shape=img.shape, conf_thresh=0.5, nms_thresh=0.4, batch_size=batch_size, gpus=gpus)
 
     print('Initializing tests')
     if len(sys.argv) == 6:

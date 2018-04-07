@@ -12,11 +12,10 @@ class Network():
         self.batch = batch_size
         self.conf_thresh = conf_thresh
         self.nms_thresh = nms_thresh
-        image_size = img_shape.shape
-        if len(image_size)==4:
-            _, self.w, self.h, _ = image_size
+        if len(img_shape)==4:
+            _, self.w, self.h, _ = img_shape
         else:
-            self.w, self.h, _ = image_size
+            self.w, self.h, _ = img_shape
         print('Loading weights from %s... Done!' % (weightfile))
 
         if self.m.num_classes == 20:
@@ -134,7 +133,7 @@ if __name__ == '__main__':
     # img = np.uint8(np.random.rand(512,512,3)*255) # input: stacked camera images with size of 512x512x3 and type is np.uint8
     if batch_size>1: img = np.repeat(img[None,:],batch_size,axis=0)
 
-    net = Network(cfgfile, weightfile, img_shape=img, conf_thresh=0.5, nms_thresh=0.4, batch_size=batch_size, gpus=gpus)
+    net = Network(cfgfile, weightfile, img_shape=img.shape, conf_thresh=0.5, nms_thresh=0.4, batch_size=batch_size, gpus=gpus)
 
     if len(sys.argv) == 5:
         bboxes = net.return_predict(img)
