@@ -1,5 +1,5 @@
 ### Experimenting with Yolov2 in pytorch
-This experiment was performed based on (almost totally) the code available in this link https://github.com/marvis/pytorch-yolo2 . My contributions are main_module and debug_main_module for a pipeline development.
+This experiment was performed based on (almost totally) the code available in this link https://github.com/marvis/pytorch-yolo2. My contributions are main_module and debug_main_module for a pipeline development.
 
 ##### Download Weights for pedestrian detection into backup folder
 ```
