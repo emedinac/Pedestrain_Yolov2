@@ -1,6 +1,7 @@
 from utils import *
 from darknet import Darknet
 import cv2
+from PIL import Image, ImageDraw, ImageFont
 
 import torch
 
@@ -13,9 +14,9 @@ class Network():
         self.conf_thresh = conf_thresh
         self.nms_thresh = nms_thresh
         if len(img_shape)==4:
-            _, self.w, self.h, _ = img_shape
+            _, self.h, self.w, _ = img_shape
         else:
-            self.w, self.h, _ = img_shape
+            self.h, self.w, _ = img_shape
         print('Loading weights from %s... Done!' % (weightfile))
 
         if self.m.num_classes == 20:
@@ -87,7 +88,12 @@ class Network():
                             bh = hs[ind]
                             cls_max_conf = cls_max_confs[ind]
                             cls_max_id = cls_max_ids[ind]
-                            box = [bcx/w*self.w, bcy/h*self.h, bw/w*self.w, bh/h*self.h, det_conf, cls_max_conf, cls_max_id]
+                            # box = [bcx/w, bcy/h, bw/w, bh/h, det_conf, cls_max_conf, cls_max_id]
+                            box = [ int(round((bcx-bw/2.0)/w*self.w)), 
+                                    int(round((bcy-bh/2.0)/h*self.h)), 
+                                    int(round((bcx+bw/2.0)/w*self.w)), 
+                                    int(round((bcy+bh/2.0)/h*self.h)), 
+                                    det_conf, cls_max_conf, cls_max_id]
                             boxes.append(box)
             all_boxes.append(boxes)
         return all_boxes
@@ -119,7 +125,11 @@ class Network():
         bboxes = self.do_detect(sized, use_cuda=1)
         return bboxes
 
-
+def plot_cv2_image(bboxes, img):
+    for i in bboxes[0]:
+        print(i, tuple(i[:2]), tuple(i[2:4]))
+        draw = cv2.rectangle(img, tuple(i[:2]), tuple(i[2:4]), (255,0,0), 2)
+    return draw
 ###########################################
 ################## Test ###################
 ###########################################
@@ -137,6 +147,10 @@ if __name__ == '__main__':
 
     if len(sys.argv) == 5:
         bboxes = net.return_predict(img)
+        output = plot_cv2_image(bboxes, img)
+        cv2.imshow('   output image   ', output)
+        cv2.waitKey()
+        cv2.destroyAllWindows()
     elif len(sys.argv) == 6:
         meant=0
         bboxes = net.return_predict(img)
