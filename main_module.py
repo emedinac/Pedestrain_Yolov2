@@ -126,9 +126,16 @@ class Network():
         return bboxes
 
 def plot_cv2_image(bboxes, img):
-    for i in bboxes[0]:
-        print(i, tuple(i[:2]), tuple(i[2:4]))
-        draw = cv2.rectangle(img, tuple(i[:2]), tuple(i[2:4]), (255,0,0), 2)
+    draw = np.zeros_like(img)
+    if len(bboxes)>1:
+        for j in range(len(bboxes)):
+            for i in bboxes[j]:
+                print(i, tuple(i[:2]), tuple(i[2:4]))
+                draw[j,...] = cv2.rectangle(img[j,...], tuple(i[:2]), tuple(i[2:4]), (255,0,0), 2)
+    else:
+         for i in bboxes[0]:
+            print(i, tuple(i[:2]), tuple(i[2:4]))
+            draw = cv2.rectangle(img, tuple(i[:2]), tuple(i[2:4]), (255,0,0), 2)       
     return draw
 ###########################################
 ################## Test ###################
@@ -148,7 +155,9 @@ if __name__ == '__main__':
     if len(sys.argv) == 5:
         bboxes = net.return_predict(img)
         output = plot_cv2_image(bboxes, img)
-        cv2.imshow('   output image   ', output)
+        if len(output.shape)==4: output_img = output[0,...]
+        else: output_img = output
+        cv2.imshow('   output image   ', output_img)
         cv2.waitKey()
         cv2.destroyAllWindows()
     elif len(sys.argv) == 6:
