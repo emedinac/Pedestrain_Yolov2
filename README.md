@@ -1,5 +1,5 @@
 ### Experimenting with Yolov2 in pytorch
-This experiment was performed based on (almost totally) the code available in this link https://github.com/marvis/pytorch-yolo2. My contributions are main_module and debug_main_module for a pipeline development.
+This experiment was performed based on (almost totally) the code available in this link https://github.com/marvis/pytorch-yolo2. My contributions are main_module and debug_main_module for a pipeline development, or in case Yolo works as a module (python module) in a higher top level code. Cut and Paste this module after follow the steps bellow.
 
 ##### Download Weights for pedestrian detection into backup folder
 ```
@@ -7,8 +7,30 @@ mkdir backup
 cd backup
 wget https://drive.google.com/open?id=1b-g-Jg6cN8Gya4yEsV-60odkJCzzVwWJ
 ```
+If you will use the module, backup must be inside the module folder.
+```
+cd module
+mkdir backup
+cd backup
+wget https://drive.google.com/open?id=1b-g-Jg6cN8Gya4yEsV-60odkJCzzVwWJ
+```
+---
+##### Test the Pedestrian Detection Module Using a Pre-Trained Model
+By now, you already can test this module by means of this command
+```
+run main_module.py cfg/yolo_person.cfg backup/yolo_person.weights 2 128 10
+```
+or 
+```
+run main_module.py cfg/yolo_person.cfg backup/yolo_person.weights 2 128
+```
+In case you want debug, try with the following code:
+```
+run main_module.py cfg/yolo_person.cfg backup/yolo_person.weights 2 128 1
+```
 ---
 #### Pedestrian Detection Using A Pre-Trained Model
+From this point, the code will run in the main section like original github, but in this case used for pedestrian detection. be sure about the path of "yolo_person.weights" file.
 ```
 python detect.py cfg/yolo_person.cfg yolo_person.weights data/person.jpg
 ```
@@ -52,7 +74,7 @@ or
 ```
 python train.py cfg/person.data cfg/yolo_person.cfg new_weights.conv.32
 ```
-To freeze some layers the freeze parameter can be employed, just run the following command in train.py:
+To freeze some layers and do a fine-tunning, just run the following command in train.py:
 ```
 Darknet(cfgfile,FREEZE=n_layer=2) # n_layer=2, 6, 10, ...
 ```
