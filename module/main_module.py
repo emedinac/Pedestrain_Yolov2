@@ -104,48 +104,54 @@ def plot_cv2_image(bboxes, img):
     if len(bboxes)>1:
         for j in range(len(bboxes)):
             for i in bboxes[j]:
-                # print(i, tuple(i[:2]), tuple(i[2:4]))
+                print(i, tuple(i[:2]), tuple(i[2:4]))
                 draw[j,...] = cv2.rectangle(img[j,...], tuple(i[:2]), tuple(i[2:4]), (255,0,0), 1)
     else:
          for i in bboxes[0]:
-            # print(i, tuple(i[:2]), tuple(i[2:4]))
+            print(i, tuple(i[:2]), tuple(i[2:4]))
             draw = cv2.rectangle(img, tuple(i[:2]), tuple(i[2:4]), (255,0,0), 1)       
     return draw
+
+
 ###########################################
 ################## Test ###################
 ###########################################
-if __name__ == '__main__':
-    cfgfile = sys.argv[1] # config file
-    weightfile = sys.argv[2] # weights file
-    gpus = float(sys.argv[3]) # possible options: 1, other number to take all gpus
-    batch_size = int(float(sys.argv[4])) # batch size
+def test(*args):
+    try:
+        assert(len(args)==5)                                        # cfgfile, weightfile, gpus, batch_size, IterationTimes
+        cfgfile, weightfile, gpus, batch_size, IterationTimes = args
+        assert(type(cfgfile)==str)                                  # config file
+        assert(type(weightfile)==str)                               # weights file
+        assert(type(gpus)==int and gpus>0)                          # possible options: 1, other number to take all gpus
+        assert(type(batch_size)==int and batch_size>0)              # batch size
+        assert(type(IterationTimes)==int and IterationTimes>0)      # Iteration times
 
-    img = cv2.imread('./data/person_1.jpg')
-    # img = np.uint8(np.random.rand(512,512,3)*255) # input: stacked camera images with size of 512x512x3 and type is np.uint8
-    if batch_size>1: img = np.repeat(img[None,:],batch_size,axis=0)
+        img = cv2.imread('./data/person_1.jpg')
+        # img = np.uint8(np.random.rand(512,512,3)*255) # input: stacked camera images with size of 512x512x3 and type is np.uint8
+        if batch_size>1: img = np.repeat(img[None,:],batch_size,axis=0)
+        net = Network(cfgfile, weightfile, img_shape=img.shape, conf_thresh=0.5, nms_thresh=0.4, batch_size=batch_size, gpus=gpus)
 
-    net = Network(cfgfile, weightfile, img_shape=img.shape, conf_thresh=0.5, nms_thresh=0.4, batch_size=batch_size, gpus=gpus)
-
-    if len(sys.argv) == 5:
-        bboxes = net.return_predict(img)
-        output = plot_cv2_image(bboxes, img)
-        if len(output.shape)==4: output_img = output[0,...]
-        else: output_img = output
-        # cv2.imshow('   output image   ', output_img)
-        # cv2.waitKey()
-        # cv2.destroyAllWindows()
-    elif len(sys.argv) == 6:
-        meant=0
-        bboxes = net.return_predict(img)
-        times = int(float(sys.argv[5]))
-        for i in range(times):
-            print(i)
-            t1=time.time()
+        if IterationTimes==1:
             bboxes = net.return_predict(img)
-            meant += time.time()-t1
-        meant /= times
-        print("{:.4f} fps".format(1/meant))
-    else:
+            output = plot_cv2_image(bboxes, img)
+            if len(output.shape)==4: output_img = output[0,...]
+            else: output_img = output
+            cv2.imshow('   output image   ', output_img)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+        else:
+            meant=0
+            bboxes = net.return_predict(img)
+            times = IterationTimes
+            for i in range(times):
+                print(i)
+                t1=time.time()
+                bboxes = net.return_predict(img)
+                meant += time.time()-t1
+            meant /= times
+            print("{:.4f} fps".format(1/meant))
+
+    except AssertionError:
         print('To test the variable -img- can be used over a real input image or a random noise')
         print('Usage:')
         print('    run main_module.py cfgfile weightfile GPUs BatchSize IterationTimes')
@@ -159,7 +165,7 @@ if __name__ == '__main__':
         print('')
         print('Exmaple:')
         print('    run main_module.py cfg/yolo_person.cfg backup/yolo_person.weights 2 128 10')
-        print('    perform detection on multiple cameras using pipeline workflow')
+        print('    perform detection on multiple cameras using pipeline workflow and compute the mean time in 10 iterations')
         print('or')
-        print('    run main_module.py cfg/yolo_person.cfg backup/yolo_person.weights 2 128 ')
+        print('    run main_module.py cfg/yolo_person.cfg backup/yolo_person.weights 2 1 1 ')
         print('    perform detection on one camera using pipeline workflow')
