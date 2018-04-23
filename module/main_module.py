@@ -88,14 +88,10 @@ class Network():
             final_boxes.append(nms(boxes, self.nms_thresh))
         return final_boxes
     def return_predict(self,img):
-        if self.batch>1:
-            img_vector = []
-            for i in range(self.batch):
-                img_vector.append( cv2.resize(img[i], (self.m.width, self.m.height)) )
-            sized = np.array(img_vector)
-        else:
-            sized = cv2.resize(img, (self.m.width, self.m.height))
-            sized = sized[None,:]
+        img_vector = []
+        for i in range(self.batch):
+            img_vector.append( cv2.resize(img[i], (self.m.width, self.m.height)) )
+        sized = np.array(img_vector)
         bboxes = self.do_detect(sized, use_cuda=1)
         return bboxes
 
@@ -128,7 +124,7 @@ def test(*args):
 
         img = cv2.imread('./data/person_1.jpg')
         # img = np.uint8(np.random.rand(512,512,3)*255) # input: stacked camera images with size of 512x512x3 and type is np.uint8
-        if batch_size>1: img = np.repeat(img[None,:],batch_size,axis=0)
+        img = np.repeat(img[None,:],batch_size,axis=0)
         net = Network(cfgfile, weightfile, img_shape=img.shape, conf_thresh=0.5, nms_thresh=0.4, batch_size=batch_size, gpus=gpus)
 
         if IterationTimes==1:
@@ -152,10 +148,9 @@ def test(*args):
             print("{:.4f} fps".format(1/meant))
 
     except AssertionError:
-        print('To test the variable -img- can be used over a real input image or a random noise')
-        print('Usage:')
-        print('    run main_module.py cfgfile weightfile GPUs BatchSize IterationTimes')
-        print('')
+        print('To test, the variable -img- can be used over a real input image or a random noise')
+        print('The input arguments in test function are the following:                          ')
+        print('cfgfile weightfile GPUs BatchSize IterationTimes')
         print('')
         print('cfgfile:\tYolo configuration file')
         print('weightfile:\tYolo weights file')
@@ -163,9 +158,12 @@ def test(*args):
         print('BatchSize:\tNumber of camera images stacked in one batch')
         print('IterationTimes:\tK Iterations for time processing testing (optional)')
         print('')
-        print('Exmaple:')
-        print('    run main_module.py cfg/yolo_person.cfg backup/yolo_person.weights 2 128 10')
+        print('')
+        print('Usage:')
+        print('    import module.main_module as module')
+        print('')
+        print('    module.test(cfg/yolo_person.cfg, backup/yolo_person.weights, 2, 8, 10)  ')
         print('    perform detection on multiple cameras using pipeline workflow and compute the mean time in 10 iterations')
         print('or')
-        print('    run main_module.py cfg/yolo_person.cfg backup/yolo_person.weights 2 1 1 ')
+        print('    module.test(cfg/yolo_person.cfg, backup/yolo_person.weights, 2, 1, 1)   ')
         print('    perform detection on one camera using pipeline workflow')
