@@ -67,7 +67,7 @@ cat 2007_train.txt 2007_val.txt 2012_*.txt > voc_train.txt
 ##### Extract Pretrained Convolutional Weights
 run the following command, where 32 is the conv-layer number:
 ```
-python partial.py cfg/yolo_person.cfg yolo_person.weights new_weights.conv.32 32
+python partial.py cfg/yolo_person.cfg backup/yolo_person.weights new_weights.conv.32 32
 ```
 ##### Train The Model
 ```
