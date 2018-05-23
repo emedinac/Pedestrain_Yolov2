@@ -35,7 +35,7 @@ def build_targets(pred_boxes, target, anchors, num_anchors, num_classes, nH, nW,
             gh = target[b][t*5+4]*nH
             cur_gt_boxes = torch.FloatTensor([gx,gy,gw,gh]).repeat(nAnchors,1).t()
             cur_ious = torch.max(cur_ious, bbox_ious(cur_pred_boxes, cur_gt_boxes, x1y1x2y2=False))
-        conf_mask[b][cur_ious>sil_thresh] = 0
+        conf_mask[b][cur_ious.view(nA,nH,nW)>sil_thresh] = 0
     if seen < 12800:
        if anchor_step == 4:
            tx = torch.FloatTensor(anchors).view(nA, anchor_step).index_select(1, torch.LongTensor([2])).view(1,nA,1,1).repeat(nB,1,nH,nW)
@@ -57,12 +57,12 @@ def build_targets(pred_boxes, target, anchors, num_anchors, num_classes, nH, nW,
             best_iou = 0.0
             best_n = -1
             min_dist = 10000
-            gx = target[b][t*5+1] * nW
-            gy = target[b][t*5+2] * nH
+            gx = target[b][t*5+1].float() * nW
+            gy = target[b][t*5+2].float() * nH
             gi = int(gx)
             gj = int(gy)
-            gw = target[b][t*5+3]*nW
-            gh = target[b][t*5+4]*nH
+            gw = target[b][t*5+3].float() * nW
+            gh = target[b][t*5+4].float() * nH
             gt_box = [0, 0, gw, gh]
             for n in range(nA):
                 aw = anchors[anchor_step*n]
@@ -91,7 +91,7 @@ def build_targets(pred_boxes, target, anchors, num_anchors, num_classes, nH, nW,
             ty[b][best_n][gj][gi] = target[b][t*5+2] * nH - gj
             tw[b][best_n][gj][gi] = math.log(gw/anchors[anchor_step*best_n])
             th[b][best_n][gj][gi] = math.log(gh/anchors[anchor_step*best_n+1])
-            iou = bbox_iou(gt_box, pred_box, x1y1x2y2=False) # best_iou
+            iou = bbox_iou(gt_box, pred_box, x1y1x2y2=False) # best_iou need to be improved in pytorch 0.4
             tconf[b][best_n][gj][gi] = iou
             tcls[b][best_n][gj][gi] = target[b][t*5]
             if iou > 0.5:
@@ -141,10 +141,10 @@ class RegionLoss(nn.Module):
         anchor_h = torch.Tensor(self.anchors).view(nA, self.anchor_step).index_select(1, torch.LongTensor([1])).cuda()
         anchor_w = anchor_w.repeat(nB, 1).repeat(1, 1, nH*nW).view(nB*nA*nH*nW)
         anchor_h = anchor_h.repeat(nB, 1).repeat(1, 1, nH*nW).view(nB*nA*nH*nW)
-        pred_boxes[0] = x.data + grid_x
-        pred_boxes[1] = y.data + grid_y
-        pred_boxes[2] = torch.exp(w.data) * anchor_w
-        pred_boxes[3] = torch.exp(h.data) * anchor_h
+        pred_boxes[0,...] = x.data.view_as(grid_x) + grid_x
+        pred_boxes[1,...] = y.data.view_as(grid_y) + grid_y
+        pred_boxes[2,...] = torch.exp(w.data).view_as(anchor_w) * anchor_w
+        pred_boxes[3,...] = torch.exp(h.data).view_as(anchor_h) * anchor_h
         pred_boxes = convert2cpu(pred_boxes.transpose(0,1).contiguous().view(-1,4))
         t2 = time.time()
 
@@ -158,7 +158,7 @@ class RegionLoss(nn.Module):
         tw    = Variable(tw.cuda())
         th    = Variable(th.cuda())
         tconf = Variable(tconf.cuda())
-        tcls  = Variable(tcls.view(-1)[cls_mask].long().cuda())
+        tcls  = Variable(tcls.view(-1)[cls_mask.view(-1)].long().cuda())
 
         coord_mask = Variable(coord_mask.cuda())
         conf_mask  = Variable(conf_mask.cuda().sqrt())
