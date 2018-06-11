@@ -6,17 +6,12 @@ from .layer_to_boxes import layer_to_boxes as cuda
 import torch
 
 class Network():
-    def __init__(self, cfgfile, weightfile, img_shape, conf_thresh=0.5, nms_thresh=0.4, batch_size=1, gpus=1):
+    def __init__(self, cfgfile, weightfile, conf_thresh=0.5, nms_thresh=0.4, gpus=1):
         self.m = Darknet(cfgfile) # model <=> m
         self.m.print_network()
         self.m.load_weights(weightfile)
-        self.batch = batch_size
         self.conf_thresh = conf_thresh
         self.nms_thresh = nms_thresh
-        if len(img_shape)==4:
-            _, self.h, self.w, _ = img_shape
-        else:
-            self.h, self.w, _ = img_shape
         print('Loading weights from %s... Done!' % (weightfile))
 
         if self.m.num_classes == 20:
@@ -66,10 +61,8 @@ class Network():
         cls_max_ids = cls_max_ids.view(-1)
 
         # t1 = time.time()
-        all_boxes = cuda.layer_to_boxes(self.batch, w,h, self.m.num_anchors, self.w, self.h, self.conf_thresh, det_confs,cls_max_confs,cls_max_ids,xs,ys,ws,hs)
+        all_boxes = cuda.layer_to_boxes(self.batch, w,h, self.m.num_anchors, self.vector_sizes, self.conf_thresh, det_confs,cls_max_confs,cls_max_ids,xs,ys,ws,hs)
         # print(time.time()-t1)
-        # print(np.array(all_boxes))
-        # print(np.array(all_boxes).shape)
         return all_boxes
 
     def do_detect(self, img, use_cuda=1):
@@ -89,7 +82,10 @@ class Network():
         return final_boxes
     def return_predict(self,img):
         img_vector = []
+        self.vector_sizes = []
+        self.batch = img.shape[0]
         for i in range(self.batch):
+            self.vector_sizes.append(img[i].shape[:2])
             img_vector.append( cv2.resize(img[i], (self.m.width, self.m.height)) )
         sized = np.array(img_vector)
         bboxes = self.do_detect(sized, use_cuda=1)
@@ -97,15 +93,10 @@ class Network():
 
 def plot_cv2_image(bboxes, img):
     draw = np.zeros_like(img)
-    if len(bboxes)>1:
-        for j in range(len(bboxes)):
-            for i in bboxes[j]:
-                print(i, tuple(i[:2]), tuple(i[2:4]))
-                draw[j,...] = cv2.rectangle(img[j,...], tuple(i[:2]), tuple(i[2:4]), (255,0,0), 1)
-    else:
-         for i in bboxes[0]:
+    for s, b in enumerate(bboxes):
+        for i in b:
             print(i, tuple(i[:2]), tuple(i[2:4]))
-            draw = cv2.rectangle(img, tuple(i[:2]), tuple(i[2:4]), (255,0,0), 1)       
+            draw[s] = cv2.rectangle(img[s], tuple(i[:2]), tuple(i[2:4]), (255,0,0), 1)     
     return draw
 
 
@@ -114,27 +105,24 @@ def plot_cv2_image(bboxes, img):
 ###########################################
 def test(*args):
     try:
-        assert(len(args)==5)                                        # cfgfile, weightfile, gpus, batch_size, IterationTimes
-        cfgfile, weightfile, gpus, batch_size, IterationTimes = args
-        assert(type(cfgfile)==str)                                  # config file
-        assert(type(weightfile)==str)                               # weights file
-        assert(type(gpus)==int and gpus>0)                          # possible options: 1, other number to take all gpus
-        assert(type(batch_size)==int and batch_size>0)              # batch size
-        assert(type(IterationTimes)==int and IterationTimes>0)      # Iteration times
+        assert(len(args)==5)                                                # cfgfile, weightfile, gpus, batch_size, IterationTimes
+        cfgfile, weightfile, gpus, batch_size_FOR_TEST, IterationTimes = args
+        assert(type(cfgfile)==str)                                          # config file
+        assert(type(weightfile)==str)                                       # weights file
+        assert(type(gpus)==int and gpus>0)                                  # possible options: 1, other number to take all gpus
+        assert(type(batch_size_FOR_TEST)==int and batch_size_FOR_TEST>0)    # batch size
+        assert(type(IterationTimes)==int and IterationTimes>0)              # Iteration times
 
         img = cv2.imread('./data/person_1.jpg')
         # img = np.uint8(np.random.rand(512,512,3)*255) # input: stacked camera images with size of 512x512x3 and type is np.uint8
-        img = np.repeat(img[None,:],batch_size,axis=0)
-        net = Network(cfgfile, weightfile, img_shape=img.shape, conf_thresh=0.5, nms_thresh=0.4, batch_size=batch_size, gpus=gpus)
+        img = np.repeat(img[None,:],batch_size_FOR_TEST,axis=0)
+        net = Network(cfgfile, weightfile, conf_thresh=0.5, nms_thresh=0.4, gpus=gpus)
 
         if IterationTimes==1:
             bboxes = net.return_predict(img)
             output = plot_cv2_image(bboxes, img)
-            if len(output.shape)==4: output_img = output[0,...]
-            else: output_img = output
-            cv2.imshow('   output image   ', output_img)
-            cv2.waitKey()
-            cv2.destroyAllWindows()
+            output_img = output[-1]
+            cv2.imwrite('output_image.png', output_img)
         else:
             meant=0
             bboxes = net.return_predict(img)
