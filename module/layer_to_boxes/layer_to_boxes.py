@@ -1,6 +1,6 @@
 from ..utils import *
 
-def layer_to_boxes(batch, w,h, num_anchors, wi, hi, conf_thresh, det_confs,cls_max_confs,cls_max_ids,xs,ys,ws,hs):
+def layer_to_boxes(batch, w,h, num_anchors, sizes, conf_thresh, det_confs,cls_max_confs,cls_max_ids,xs,ys,ws,hs):
     all_boxes = []
     sz_hw = h*w
     sz_hwa = sz_hw*num_anchors
@@ -11,8 +11,9 @@ def layer_to_boxes(batch, w,h, num_anchors, wi, hi, conf_thresh, det_confs,cls_m
     ys = convert2cpu(ys)
     ws = convert2cpu(ws)
     hs = convert2cpu(hs)
+    # cls_max_ids = cls_max_ids.long()
     # cython optimization is required in this for sections.
-    for b in range(batch):
+    for (hi, wi), b in zip(sizes, range(batch)):
         boxes = []
         for cy in range(h):
             for cx in range(w):
@@ -26,14 +27,14 @@ def layer_to_boxes(batch, w,h, num_anchors, wi, hi, conf_thresh, det_confs,cls_m
                         bcy = ys[ind]
                         bw = ws[ind]
                         bh = hs[ind]
-                        cls_max_conf = cls_max_confs[ind]
-                        cls_max_id = cls_max_ids[ind]
+                        cls_max_conf = cls_max_confs[ind].tolist()
+                        cls_max_id = cls_max_ids[ind].tolist()
                         # box = [bcx/w, bcy/h, bw/w, bh/h, det_conf, cls_max_conf, cls_max_id]
-                        box = [ int(round((bcx-bw/2.0)/w*wi)), 
-                                int(round((bcy-bh/2.0)/h*hi)), 
-                                int(round((bcx+bw/2.0)/w*wi)), 
-                                int(round((bcy+bh/2.0)/h*hi)), 
-                                det_conf, cls_max_conf, cls_max_id]
+                        box = [ int(((bcx-bw/2.0)/w*wi).round()), 
+                                int(((bcy-bh/2.0)/h*hi).round()), 
+                                int(((bcx+bw/2.0)/w*wi).round()), 
+                                int(((bcy+bh/2.0)/h*hi).round()), 
+                                det_conf.tolist(), cls_max_conf, cls_max_id]
                         boxes.append(box)
         all_boxes.append(boxes)
     return all_boxes
