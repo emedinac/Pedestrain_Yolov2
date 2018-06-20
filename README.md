@@ -18,17 +18,17 @@ wget https://drive.google.com/open?id=1b-g-Jg6cN8Gya4yEsV-60odkJCzzVwWJ
 ##### Test the Pedestrian Detection Module Using a Pre-Trained Model
 By now, you already can test this module by means of this command
 ```
-import module.main_module as yolov2
+import module_gpu.main_module as yolov2
 yolov2.test('cfg/yolo_person.cfg', 'backup/yolo_person.weights', 2, 16, 10) # run this 10 times
 ```
 or 
 ```
-import module.main_module as yolov2
+import module_gpu.main_module as yolov2
 yolov2.test('cfg/yolo_person.cfg', 'backup/yolo_person.weights', 2, 16, 1) # run only 1 time
 ```
 In case you want debug, try with the following code:
 ```
-import module.debug_main_module as debug_yolov2
+import module_gpu.debug_main_module as debug_yolov2
 debug_yolov2.test('cfg/yolo_person.cfg', 'backup/yolo_person.weights', 2, 16, 1) # run only 1 time
 ```
 ---
