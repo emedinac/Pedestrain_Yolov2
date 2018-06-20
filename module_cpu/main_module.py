@@ -22,10 +22,8 @@ class Network():
             namesfile = 'data/person.names'
         class_names = load_class_names(namesfile)
      
-        self.m.cuda()
         self.m.eval()
-        if gpus>1: self.net = torch.nn.DataParallel(self.m, device_ids=range(torch.cuda.device_count()))
-        else: self.net = self.m
+        self.net = self.m
 
     def get_region_boxes(self, output):
         anchor_step = len(self.m.anchors)//self.m.num_anchors
@@ -38,8 +36,8 @@ class Network():
         output = output.view(self.batch*self.m.num_anchors, 5+self.m.num_classes, h*w).transpose(0,1).contiguous().view(5+self.m.num_classes, self.batch*self.m.num_anchors*h*w)
         # print(time.time()-t1)
         # t1 = time.time()
-        grid_x = torch.linspace(0, w-1, w).cuda().repeat(h,1).repeat(self.batch*self.m.num_anchors, 1, 1).view(self.batch*self.m.num_anchors*h*w)
-        grid_y = torch.linspace(0, h-1, h).cuda().repeat(w,1).t().repeat(self.batch*self.m.num_anchors, 1, 1).view(self.batch*self.m.num_anchors*h*w)
+        grid_x = torch.linspace(0, w-1, w).repeat(h,1).repeat(self.batch*self.m.num_anchors, 1, 1).view(self.batch*self.m.num_anchors*h*w)
+        grid_y = torch.linspace(0, h-1, h).repeat(w,1).t().repeat(self.batch*self.m.num_anchors, 1, 1).view(self.batch*self.m.num_anchors*h*w)
         # print(time.time()-t1)
         # t1 = time.time()
         xs = torch.sigmoid(output[0]) + grid_x
@@ -48,8 +46,8 @@ class Network():
 
         anchor_w = torch.Tensor(self.m.anchors).view(self.m.num_anchors, anchor_step).index_select(1, torch.LongTensor([0]))
         anchor_h = torch.Tensor(self.m.anchors).view(self.m.num_anchors, anchor_step).index_select(1, torch.LongTensor([1]))
-        anchor_w = anchor_w.repeat(self.batch, 1).repeat(1, 1, h*w).view(self.batch*self.m.num_anchors*h*w).cuda()
-        anchor_h = anchor_h.repeat(self.batch, 1).repeat(1, 1, h*w).view(self.batch*self.m.num_anchors*h*w).cuda()
+        anchor_w = anchor_w.repeat(self.batch, 1).repeat(1, 1, h*w).view(self.batch*self.m.num_anchors*h*w)
+        anchor_h = anchor_h.repeat(self.batch, 1).repeat(1, 1, h*w).view(self.batch*self.m.num_anchors*h*w)
         ws = torch.exp(output[2]) * anchor_w
         hs = torch.exp(output[3]) * anchor_h
 
@@ -65,11 +63,9 @@ class Network():
         # print(time.time()-t1)
         return all_boxes
 
-    def do_detect(self, img, use_cuda=1):
+    def do_detect(self, img):
         if type(img) == np.ndarray: # cv2 image
             img = torch.from_numpy(img.transpose(0,3,1,2)).float().div(255.0)
-        if use_cuda:
-            img = img.cuda()
         img = torch.autograd.Variable(img)
         output = self.net(img)
 
@@ -88,7 +84,7 @@ class Network():
             self.vector_sizes.append(img[i].shape[:2])
             img_vector.append( cv2.resize(img[i], (self.m.width, self.m.height)) )
         sized = np.array(img_vector)
-        bboxes = self.do_detect(sized, use_cuda=1)
+        bboxes = self.do_detect(sized)
         return bboxes
 
 def plot_cv2_image(bboxes, img):
